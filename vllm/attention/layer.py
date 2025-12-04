@@ -283,6 +283,8 @@ class Attention(nn.Module, AttentionLayerBase):
         else:
             if self.use_direct_call:
                 forward_context = get_forward_context()
+                logger.debug("[attn_meta][use] fc.attn_metadata=%s", type(forward_context.attn_metadata).__name__ if forward_context.attn_metadata is not None else None)
+                print(f"************************************************************ forward attn_metadata: {forward_context.attn_metadata}")
                 attn_metadata = forward_context.attn_metadata
                 if isinstance(attn_metadata, dict):
                     attn_metadata = attn_metadata[self.layer_name]

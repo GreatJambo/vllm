@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 import dataclasses
+import os
 from abc import ABC, abstractmethod
 from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional, Type,
                     TypeVar)
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
     from vllm.model_executor import SamplingMetadata
 
 logger = init_logger(__name__)
+_DEBUG_ATTN_META = os.getenv("VLLM_DEBUG_ATTN_METADATA", "").lower() in ("1", "true", "on", "yes")
 
 T = TypeVar('T', bound="BroadcastableModelInput")
 
@@ -35,6 +37,8 @@ def _add_attn_metadata_broadcastable_dict(
     AttentionMetadata fields.
     """
     if attn_metadata is not None:
+        logger.debug("[attn_meta][send] keys=%s", list(attn_metadata.asdict_zerocopy().keys()))
+        print(f"************************************************************ add_attn_metadata_broadcastable_dict attn_metadata: {attn_metadata}")
         tensor_dict.update(attn_metadata.asdict_zerocopy())
 
 
@@ -57,6 +61,19 @@ def _init_attn_metadata_from_tensor_dict(
 
     attn_metadata = attn_backend.make_metadata(**valid_attn_kwargs)
     tensor_dict["attn_metadata"] = attn_metadata
+
+    if _DEBUG_ATTN_META:
+        logger.debug(
+            "[attn_meta] backend=%s kwargs_keys=%s attn_metadata=%s",
+            getattr(attn_backend, "get_name", lambda: type(attn_backend).__name__)(),
+            list(valid_attn_kwargs.keys()),
+            type(attn_metadata).__name__ if attn_metadata is not None else None,
+        )
+        if attn_metadata is None:
+            logger.warning(
+                "[attn_meta] make_metadata returned None; downstream consumers (e.g., KV connectors) "
+                "will see attn_metadata=None"
+            )
     return tensor_dict
 
 

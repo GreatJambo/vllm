@@ -352,6 +352,8 @@ class LocalOrDistributedWorkerBase(WorkerBase):
             broadcast_data = worker_input.as_broadcastable_tensor_dict()
             broadcast_data.update(model_input.as_broadcastable_tensor_dict())
             broadcast_data.update(kwargs)
+            logger.debug("[attn_meta][send] broadcast_data keys=%s", list(broadcast_data.keys()))
+            print(f"************************************************************ broadcast_data: {broadcast_data}")
             broadcast_tensor_dict(broadcast_data, src=0)
 
         if execute_model_req.async_callback:
