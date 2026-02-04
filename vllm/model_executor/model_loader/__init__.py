@@ -129,7 +129,17 @@ def get_model(
     loader = get_model_loader(vllm_config.load_config)
     if model_config is None:
         model_config = vllm_config.model_config
-    return loader.load_model(vllm_config=vllm_config, model_config=model_config)
+    model = loader.load_model(vllm_config=vllm_config, model_config=model_config)
+
+    # LMCache V1 Patch: Register model in EngineCore process
+    try:
+        from lmcache.v1.compute.models.utils import VLLMModelTracker
+
+        VLLMModelTracker.register_model("vllm-instance", model)
+    except Exception as e:
+        logger.warning(f"Failed to register model for LMCache: {e}")
+
+    return model
 
 
 __all__ = [
